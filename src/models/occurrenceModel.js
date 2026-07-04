@@ -57,6 +57,20 @@ function upsertOccurrence({
   return db.prepare("SELECT * FROM item_occurrences WHERE id = ?").get(result.lastInsertRowid);
 }
 
+function getAllOccurrences() {
+  return db.prepare(`
+    SELECT o.*, v.expression, v.type AS vocab_type, v.chinese_meaning,
+           s.session_date, s.topic AS session_topic,
+           c.course_code, c.course_name
+    FROM item_occurrences o
+    LEFT JOIN vocabulary_items v ON o.item_id = v.id
+    LEFT JOIN class_sessions s ON o.session_id = s.id
+    LEFT JOIN courses c ON s.course_id = c.id
+    ORDER BY o.id DESC
+  `).all();
+}
+
 module.exports = {
-  upsertOccurrence
+  upsertOccurrence,
+  getAllOccurrences
 };

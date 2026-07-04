@@ -10,9 +10,19 @@
 - **Database**: SQLite via `better-sqlite3`, stored at `data/class_vocab.db`, schema auto-created from `src/db/schema.sql` on first require
 - **Uploads**: Multer writes to `uploads/` directory
 
+## Frontend
+- Static files served from `public/` directory via `express.static`
+- `GET /` — vocabulary import form (upload Excel + metadata)
+- `GET /tables/` — data browser index, links to each table view
+
 ## API
 - `POST /api/import/vocabulary` — multipart form: Excel file (`file`) + course/session metadata (`courseCode`, `sessionDate`, `courseName`, `teacherName`, `semester`, `topic`, `rawTranscriptPath`, `cleanedTranscriptPath`, `summary`). `courseCode` and `sessionDate` are required.
 - `GET /api/import/vocabulary/priority` — vocabulary list with computed learning-priority scores
+- `GET /api/tables/courses` — all courses
+- `GET /api/tables/sessions` — all sessions (joined with course info)
+- `GET /api/tables/vocabulary` — all vocabulary items
+- `GET /api/tables/occurrences` — all occurrences (joined with vocab/session/course)
+- `GET /api/tables/reviewlogs` — all review logs (joined with vocab)
 
 ## Excel Format
 Columns accept either Chinese or English headers. Chinese is the primary:

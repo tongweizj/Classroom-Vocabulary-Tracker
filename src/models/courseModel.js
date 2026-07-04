@@ -17,6 +17,11 @@ function findOrCreateCourse({ courseCode, courseName, teacherName, semester }) {
   return db.prepare("SELECT * FROM courses WHERE id = ?").get(result.lastInsertRowid);
 }
 
+function getAllCourses() {
+  return db.prepare("SELECT * FROM courses ORDER BY id DESC").all();
+}
+
 module.exports = {
-  findOrCreateCourse
+  findOrCreateCourse,
+  getAllCourses
 };
