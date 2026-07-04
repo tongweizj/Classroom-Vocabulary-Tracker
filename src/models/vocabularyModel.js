@@ -144,7 +144,12 @@ function getVocabularyWithPriority() {
   `).all();
 }
 
+function getAllVocabulary() {
+  return db.prepare("SELECT * FROM vocabulary_items ORDER BY id DESC").all();
+}
+
 module.exports = {
   findOrCreateVocabularyItem,
-  getVocabularyWithPriority
+  getVocabularyWithPriority,
+  getAllVocabulary
 };

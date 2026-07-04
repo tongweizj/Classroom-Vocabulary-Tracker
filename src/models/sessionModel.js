@@ -41,6 +41,16 @@ function findOrCreateSession({
   return db.prepare("SELECT * FROM class_sessions WHERE id = ?").get(result.lastInsertRowid);
 }
 
+function getAllSessions() {
+  return db.prepare(`
+    SELECT s.*, c.course_code, c.course_name
+    FROM class_sessions s
+    LEFT JOIN courses c ON s.course_id = c.id
+    ORDER BY s.session_date DESC
+  `).all();
+}
+
 module.exports = {
-  findOrCreateSession
+  findOrCreateSession,
+  getAllSessions
 };

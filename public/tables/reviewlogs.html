@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>复习日志</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; }
+    .nav-bar { background: #4a90d9; padding: 0 20px; margin-bottom: 32px; }
+    .nav-bar .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; }
+    .nav-bar a { color: rgba(255,255,255,0.8); text-decoration: none; padding: 14px 20px; font-size: 14px; }
+    .nav-bar a:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .nav-bar a.active { color: #fff; background: rgba(255,255,255,0.15); font-weight: 600; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    h1 { font-size: 22px; color: #333; margin-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    th, td { padding: 10px 14px; text-align: left; font-size: 13px; border-bottom: 1px solid #eee; word-break: break-word; }
+    th { background: #f8f9fa; font-weight: 600; color: #555; }
+    tr:hover { background: #f0f6ff; }
+    .count { margin-bottom: 12px; font-size: 14px; color: #666; }
+    .loading { text-align: center; color: #999; padding: 40px; }
+    .empty { text-align: center; color: #999; padding: 40px; background: #fff; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <nav class="nav-bar">
+    <div class="nav-inner">
+      <a href="/">导入词汇</a>
+      <a href="/tables/" class="active">数据浏览</a>
+    </div>
+  </nav>
+  <div class="container">
+    <a href="/tables/" style="display:inline-block;margin-bottom:16px;color:#4a90d9;text-decoration:none;font-size:14px;">&larr; 返回数据表列表</a>
+    <h1>复习日志 (review_logs)</h1>
+    <div class="count" id="count"></div>
+    <div class="loading" id="loading">加载中...</div>
+    <div class="empty" id="empty" style="display:none">暂无数据</div>
+    <table id="table" style="display:none">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>词汇</th>
+          <th>复习日期</th>
+          <th>复习前熟悉度</th>
+          <th>复习后熟悉度</th>
+          <th>备注</th>
+          <th>创建时间</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <script>
+    (async () => {
+      try {
+        const res = await fetch("/api/tables/reviewlogs");
+        const { count, data } = await res.json();
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("count").textContent = "共 " + count + " 条记录";
+        if (count === 0) {
+          document.getElementById("empty").style.display = "block";
+          return;
+        }
+        const tbody = document.getElementById("tbody");
+        data.forEach(r => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${r.id}</td><td>${r.expression || ""}</td><td>${r.review_date}</td><td>${r.familiarity_before ?? ""}</td><td>${r.familiarity_after ?? ""}</td><td>${r.note || ""}</td><td>${r.created_at}</td>`;
+          tbody.appendChild(tr);
+        });
+        document.getElementById("table").style.display = "";
+      } catch (e) {
+        document.getElementById("loading").textContent = "加载失败: " + e.message;
+      }
+    })();
+  </script>
+</body>
+</html>
