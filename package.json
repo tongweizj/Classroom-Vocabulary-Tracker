@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon src/app.js",
     "start": "node src/app.js",
-    "seed:vocabulary-filters": "node scripts/seedVocabularyFilters.js"
+    "seed:vocabulary-filters": "node scripts/seedVocabularyFilters.js",
+    "seed:prompts": "node scripts/seedPrompts.js"
   },
   "repository": {
     "type": "git",

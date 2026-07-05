@@ -10,6 +10,7 @@ const asrCorrectionRoutes = require("./routes/asrCorrectionRoutes");
 const vocabularyRoutes = require("./routes/vocabularyRoutes");
 const learningQueueRoutes = require("./routes/learningQueueRoutes");
 const practiceLogRoutes = require("./routes/practiceLogRoutes");
+const promptRoutes = require("./routes/promptRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
@@ -30,6 +31,7 @@ app.use("/api/asr-corrections", asrCorrectionRoutes);
 app.use("/api/vocabulary", vocabularyRoutes);
 app.use("/api/learning-queue", learningQueueRoutes);
 app.use("/api/practice-logs", practiceLogRoutes);
+app.use("/api/prompts", promptRoutes);
 app.use("/admin", adminRoutes);
 
 app.get("/", (req, res) => {
