@@ -164,3 +164,13 @@ exports.promptsPage = async (req, res) => {
     res.status(500).send(err.message);
   }
 };
+
+exports.vocabStudyPage = async (req, res) => {
+  try {
+    const item = await VocabularyItem.findById(req.params.id).lean();
+    if (!item) return res.status(404).send("Vocabulary item not found.");
+    res.render("vocabulary-study", { title: item.itemText, active: "vocabulary", item });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+};
