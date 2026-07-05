@@ -21,8 +21,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(express.static(path.join(__dirname, "../public")));
-
 app.use("/api/courses", courseRoutes);
 app.use("/api/lessons", lessonRoutes);
 app.use("/api/lessons/:lessonId/transcript", transcriptRoutes);
@@ -33,7 +31,7 @@ app.use("/api/practice-logs", practiceLogRoutes);
 app.use("/admin", adminRoutes);
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public/index.html"));
+  res.redirect("/admin/courses");
 });
 
 const PORT = process.env.PORT || 3000;
