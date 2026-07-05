@@ -1,0 +1,103 @@
+<%- include('partials/header', {title: 'Lessons', active: 'lessons'}) %>
+
+<h2 class="mb-3">Lessons</h2>
+
+<div id="alertBox"></div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Topic</th>
+          <th>Course</th>
+          <th>Status</th>
+          <th>File</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (locals.lessons && lessons.length) { %>
+          <% lessons.forEach(function(l) { %>
+          <tr>
+            <td><%= l.sessionDate %></td>
+            <td><%= l.topic || '—' %></td>
+            <td><%= l.courseId ? (l.courseId.courseCode + ' - ' + l.courseId.courseName) : '—' %></td>
+            <td><span class="badge bg-secondary"><%= l.status %></span></td>
+            <td><%= l.sourceFileName || '—' %></td>
+            <td><a href="/admin/lessons/<%= l._id %>" class="btn btn-sm btn-outline-primary">View</a></td>
+          </tr>
+          <% }); %>
+        <% } else { %>
+          <tr><td colspan="6" class="text-muted">No lessons yet.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">Add Lesson</div>
+  <div class="card-body">
+    <form id="lessonForm" class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Course</label>
+        <select name="courseId" class="form-select" required>
+          <option value="">— Select —</option>
+          <% if (locals.courses && courses.length) { %>
+            <% courses.forEach(function(c) { %>
+            <option value="<%= c._id %>"><%= c.courseCode %> - <%= c.courseName %></option>
+            <% }); %>
+          <% } %>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Date</label>
+        <input type="date" name="sessionDate" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Topic</label>
+        <input type="text" name="topic" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">File Name</label>
+        <input type="text" name="sourceFileName" class="form-control">
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showAlert(msg, type) {
+  document.getElementById('alertBox').innerHTML =
+    '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+    msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+}
+document.getElementById('lessonForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  try {
+    const res = await fetch('/api/lessons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showAlert(data.message || 'Lesson created.', 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      showAlert(data.message || 'Error', 'danger');
+    }
+  } catch (err) {
+    showAlert('Network error: ' + err.message, 'danger');
+  }
+});
+</script>
+
+<%- include('partials/footer') %>
