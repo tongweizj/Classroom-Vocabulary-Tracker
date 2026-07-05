@@ -39,10 +39,15 @@
               <span class="spinner-border spinner-border-sm d-none" role="status"></span>
             </td>
             <td><%= q.reviewCount %></td>
+            <td>
+              <% if (q.vocabularyItemId && q.vocabularyItemId._id) { %>
+              <a href="/admin/vocabulary/<%= q.vocabularyItemId._id %>/study" class="btn btn-sm btn-outline-primary">Study</a>
+              <% } %>
+            </td>
           </tr>
           <% }); %>
         <% } else { %>
-          <tr><td colspan="6" class="text-muted">No queue items. Click "Generate Queue" to populate.</td></tr>
+          <tr><td colspan="7" class="text-muted">No queue items. Click "Generate Queue" to populate.</td></tr>
         <% } %>
       </tbody>
     </table>

@@ -1,6 +1,8 @@
 const Lesson = require("../models/Lesson");
 const VocabularyItem = require("../models/VocabularyItem");
 const LessonVocabularyStat = require("../models/LessonVocabularyStat");
+const LearningQueue = require("../models/LearningQueue");
+const PracticeLog = require("../models/PracticeLog");
 const { normalizeExpression } = require("../utils/normalize");
 
 const ALLOWED_ITEM_TYPES = [
@@ -226,7 +228,40 @@ exports.updateFamiliarity = async (req, res) => {
 
     res.json({ message: "Familiarity updated.", data: item });
   } catch (err) {
-    res.status(500).json({ message: "Failed to update familiarity.", error: err.message });
+    res.status(500).json({ message: "Failed to fetch vocabulary.", error: err.message });
+  }
+};
+
+exports.studyDetail = async (req, res) => {
+  try {
+    const item = await VocabularyItem.findById(req.params.id).lean();
+    if (!item) {
+      return res.status(404).json({ message: "Vocabulary item not found." });
+    }
+
+    const [lessonStats, queueItem, recentLogs] = await Promise.all([
+      LessonVocabularyStat.find({ vocabularyItemId: req.params.id })
+        .populate("lessonId", "sessionDate topic status")
+        .populate("courseId", "courseCode courseName")
+        .sort({ createdAt: -1 })
+        .lean(),
+      LearningQueue.findOne({ vocabularyItemId: req.params.id }).lean(),
+      PracticeLog.find({ vocabularyItemId: req.params.id })
+        .sort({ practicedAt: -1 })
+        .limit(10)
+        .lean(),
+    ]);
+
+    res.json({
+      data: {
+        item,
+        lessonStats,
+        queueItem: queueItem || null,
+        recentLogs,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch study detail.", error: err.message });
   }
 };
 

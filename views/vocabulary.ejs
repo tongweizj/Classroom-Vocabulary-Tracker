@@ -57,6 +57,7 @@
           <th>Courses</th>
           <th>Familiarity</th>
           <th>Priority</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -71,10 +72,11 @@
             <td><%= item.courseCount %></td>
             <td><%= item.familiarityLevel %></td>
             <td><span class="badge bg-<%= item.priority === 'high' ? 'danger' : item.priority === 'low' ? 'success' : 'warning' %>"><%= item.priority %></span></td>
+            <td><a href="/admin/vocabulary/<%= item._id %>/study" class="btn btn-sm btn-outline-primary">Study</a></td>
           </tr>
           <% }); %>
         <% } else { %>
-          <tr><td colspan="8" class="text-muted text-center">No vocabulary items found.</td></tr>
+          <tr><td colspan="9" class="text-muted text-center">No vocabulary items found.</td></tr>
         <% } %>
       </tbody>
     </table>

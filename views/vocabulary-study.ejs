@@ -1,0 +1,246 @@
+<%- include('partials/header', {title: locals.item.itemText + ' - Study', active: 'vocabulary'}) %>
+
+<div class="mb-3">
+  <a href="/admin/vocabulary" class="btn btn-sm btn-outline-secondary">← Back to Vocabulary</a>
+</div>
+
+<div id="alertBox"></div>
+
+<div id="loadingSection" class="text-muted text-center py-4">Loading...</div>
+
+<div id="studySection" style="display:none">
+
+<div class="row mb-4">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="mb-1">
+          <span id="itemText"></span>
+          <button class="btn btn-sm btn-outline-secondary ms-2" onclick="speakItemText()" title="Pronounce">🔊</button>
+        </h4>
+        <p class="text-muted mb-2" id="meaningCn"></p>
+        <span class="badge bg-primary" id="itemTypeBadge"></span>
+        <span class="badge bg-secondary" id="familiarityBadge"></span>
+        <span class="badge bg-info" id="priorityBadge"></span>
+        <span class="badge bg-success" id="queueStatusBadge" style="display:none"></span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <h6>Stats</h6>
+        <p class="mb-1 small">Global Frequency: <strong id="globalFreq"></strong></p>
+        <p class="mb-1 small">Courses: <strong id="courseCount"></strong></p>
+        <p class="mb-1 small">Lessons: <strong id="lessonCount"></strong></p>
+        <p class="mb-0 small">Familiarity: <strong id="familiarityLevel"></strong></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">Familiarity</div>
+  <div class="card-body">
+    <div class="btn-group" role="group">
+      <button class="btn btn-outline-secondary" onclick="updateFamiliarity(0)">0 - Unknown</button>
+      <button class="btn btn-outline-info" onclick="updateFamiliarity(1)">1 - Can Read</button>
+      <button class="btn btn-outline-primary" onclick="updateFamiliarity(2)">2 - Understand</button>
+      <button class="btn btn-outline-success" onclick="updateFamiliarity(3)">3 - Mastered</button>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">Record Practice</div>
+  <div class="card-body">
+    <form id="practiceForm" class="row g-3">
+      <div class="col-md-3">
+        <select name="practiceType" class="form-select" required>
+          <option value="">Practice Type</option>
+          <option value="listening">Listening</option>
+          <option value="speaking">Speaking</option>
+          <option value="shadowing">Shadowing</option>
+          <option value="sentence_making">Sentence Making</option>
+          <option value="dictation">Dictation</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="score" class="form-select">
+          <option value="">Score</option>
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option>
+        </select>
+      </div>
+      <div class="col-md-5">
+        <input type="text" name="note" class="form-control" placeholder="Optional note">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Log Practice</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">Lesson Occurrences</div>
+  <div class="card-body">
+    <div id="lessonStatsList" class="text-muted">Loading...</div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">Recent Practice Logs</div>
+  <div class="card-body">
+    <div id="practiceLogsList" class="text-muted">Loading...</div>
+  </div>
+</div>
+
+<div class="card mb-3" id="queueCard" style="display:none">
+  <div class="card-header">Learning Queue</div>
+  <div class="card-body">
+    <p class="mb-1 small">Priority Score: <strong id="queueScore"></strong></p>
+    <p class="mb-1 small">Status: <strong id="queueStatus"></strong></p>
+    <p class="mb-1 small">Review Count: <strong id="queueReviewCount"></strong></p>
+    <p class="mb-0 small">Last Reviewed: <strong id="queueLastReviewed"></strong></p>
+    <div class="mt-2">
+      <button class="btn btn-sm btn-success" onclick="setQueueStatus('mastered')">Mark Mastered</button>
+      <button class="btn btn-sm btn-secondary" onclick="setQueueStatus('ignored')">Ignore</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const vocabId = '<%= item._id %>';
+let studyData = null;
+
+function showAlert(msg, type) {
+  document.getElementById('alertBox').innerHTML =
+    '<div class="alert alert-' + type + ' alert-dismissible fade show">' +
+    msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+}
+
+function speakItemText() {
+  const text = document.getElementById('itemText').textContent;
+  if (!text || !window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+
+async function loadStudy() {
+  try {
+    const res = await fetch('/api/vocabulary/' + vocabId + '/study');
+    studyData = await res.json();
+    if (!res.ok) { showAlert(studyData.message, 'danger'); return; }
+    const d = studyData.data;
+
+    document.getElementById('itemText').textContent = d.item.itemText;
+    document.getElementById('meaningCn').textContent = d.item.meaningCn || '';
+    document.getElementById('itemTypeBadge').textContent = d.item.itemType || '—';
+    document.getElementById('familiarityBadge').textContent = 'Fam: ' + d.item.familiarityLevel;
+    document.getElementById('priorityBadge').textContent = d.item.priority;
+    document.getElementById('globalFreq').textContent = d.item.globalFrequency;
+    document.getElementById('courseCount').textContent = d.item.courseCount;
+    document.getElementById('lessonCount').textContent = d.item.lessonCount;
+    document.getElementById('familiarityLevel').textContent = d.item.familiarityLevel;
+
+    // Lesson stats
+    const lsDiv = document.getElementById('lessonStatsList');
+    if (d.lessonStats.length) {
+      lsDiv.innerHTML = d.lessonStats.map(s =>
+        '<div class="border-bottom py-2">' +
+        '<strong>' + (s.courseId ? s.courseId.courseCode : '') + '</strong> ' +
+        (s.lessonId ? s.lessonId.sessionDate + ' ' + (s.lessonId.topic || '') : '') +
+        ' — Freq: ' + s.frequency +
+        '<br><small class="text-muted">' + (s.exampleSentence || '') + '</small>' +
+        '</div>'
+      ).join('');
+    } else {
+      lsDiv.innerHTML = '<p class="text-muted">No lesson occurrences.</p>';
+    }
+
+    // Practice logs
+    const plDiv = document.getElementById('practiceLogsList');
+    if (d.recentLogs.length) {
+      plDiv.innerHTML = d.recentLogs.map(l =>
+        '<div class="border-bottom py-1 small">' +
+        '<span class="badge bg-secondary">' + l.practiceType + '</span> ' +
+        (l.score != null ? 'Score: ' + l.score + ' ' : '') +
+        (l.note || '') +
+        ' <span class="text-muted">' + new Date(l.practicedAt).toLocaleDateString() + '</span>' +
+        '</div>'
+      ).join('');
+    } else {
+      plDiv.innerHTML = '<p class="text-muted">No practice logs yet.</p>';
+    }
+
+    // Queue
+    if (d.queueItem) {
+      document.getElementById('queueCard').style.display = '';
+      document.getElementById('queueStatusBadge').style.display = '';
+      document.getElementById('queueStatusBadge').textContent = d.queueItem.learningStatus;
+      document.getElementById('queueScore').textContent = d.queueItem.priorityScore;
+      document.getElementById('queueStatus').textContent = d.queueItem.learningStatus;
+      document.getElementById('queueReviewCount').textContent = d.queueItem.reviewCount;
+      document.getElementById('queueLastReviewed').textContent = d.queueItem.lastReviewedAt ? new Date(d.queueItem.lastReviewedAt).toLocaleDateString() : '—';
+    }
+
+    document.getElementById('loadingSection').style.display = 'none';
+    document.getElementById('studySection').style.display = '';
+  } catch (err) {
+    showAlert('Error: ' + err.message, 'danger');
+  }
+}
+
+async function updateFamiliarity(level) {
+  try {
+    const res = await fetch('/api/vocabulary/' + vocabId + '/familiarity', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ familiarityLevel: level })
+    });
+    const data = await res.json();
+    if (res.ok) { showAlert('Familiarity updated to ' + level, 'success'); loadStudy(); }
+    else { showAlert(data.message, 'danger'); }
+  } catch (err) { showAlert('Error: ' + err.message, 'danger'); }
+}
+
+document.getElementById('practiceForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  if (body.score) body.score = Number(body.score);
+  try {
+    const res = await fetch('/api/practice-logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vocabularyItemId: vocabId, ...body })
+    });
+    const data = await res.json();
+    if (res.ok) { showAlert('Practice logged.', 'success'); e.target.reset(); loadStudy(); }
+    else { showAlert(data.message, 'danger'); }
+  } catch (err) { showAlert('Error: ' + err.message, 'danger'); }
+});
+
+async function setQueueStatus(status) {
+  try {
+    const res = await fetch('/api/learning-queue', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vocabularyItemId: vocabId, learningStatus: status })
+    });
+    const data = await res.json();
+    if (res.ok) { showAlert('Queue status: ' + status, 'success'); loadStudy(); }
+    else { showAlert(data.message || 'Not in queue', 'danger'); }
+  } catch (err) { showAlert('Error: ' + err.message, 'danger'); }
+}
+
+loadStudy();
+</script>
+
+<%- include('partials/footer') %>

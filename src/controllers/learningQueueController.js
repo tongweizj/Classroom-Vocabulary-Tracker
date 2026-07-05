@@ -80,3 +80,29 @@ exports.generate = async (req, res) => {
     res.status(500).json({ message: "Failed to generate learning queue.", error: err.message });
   }
 };
+
+exports.updateStatus = async (req, res) => {
+  try {
+    const { vocabularyItemId, learningStatus } = req.body;
+    if (!vocabularyItemId) {
+      return res.status(400).json({ message: "vocabularyItemId is required." });
+    }
+    if (!learningStatus || !["new", "learning", "reviewing", "mastered", "ignored"].includes(learningStatus)) {
+      return res.status(400).json({ message: "learningStatus must be one of: new, learning, reviewing, mastered, ignored" });
+    }
+
+    const item = await LearningQueue.findOneAndUpdate(
+      { vocabularyItemId },
+      { learningStatus },
+      { new: true }
+    );
+
+    if (!item) {
+      return res.status(404).json({ message: "Item not found in learning queue." });
+    }
+
+    res.json({ message: "Status updated.", data: item });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update status.", error: err.message });
+  }
+};
