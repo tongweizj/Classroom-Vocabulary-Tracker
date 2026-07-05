@@ -1,0 +1,59 @@
+<%- include('partials/header', {title: 'Lesson Vocabulary', active: 'lessons'}) %>
+
+<div class="mb-3">
+  <a href="/admin/lessons/<%= locals.lessonId %>" class="btn btn-sm btn-outline-secondary">← Back to Lesson</a>
+</div>
+
+<h2 class="mb-3">Lesson Vocabulary</h2>
+
+<% if (locals.vocab && vocab.count != null) { %>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6>Type Breakdown</h6>
+    <% Object.keys(vocab.groupedByType || {}).forEach(function(type) { %>
+      <span class="badge bg-primary me-1"><%= type %>: <%= vocab.groupedByType[type] %></span>
+    <% }); %>
+    <% if (!vocab.groupedByType || Object.keys(vocab.groupedByType).length === 0) { %>
+      <span class="text-muted">None</span>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Item Text</th>
+          <th>Type</th>
+          <th>Meaning</th>
+          <th>Frequency</th>
+          <th>Priority</th>
+          <th>Learning Target</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% vocab.data.forEach(function(item) { %>
+        <tr>
+          <td><strong><%= item.itemText %></strong></td>
+          <td><span class="badge bg-secondary"><%= item.itemType || '—' %></span></td>
+          <td><%= item.meaningCn || '—' %></td>
+          <td><%= item.frequency %></td>
+          <td><span class="badge bg-<%= item.priority === 'high' ? 'danger' : item.priority === 'low' ? 'success' : 'warning' %>"><%= item.priority %></span></td>
+          <td><% if (item.isLearningTarget) { %><span class="badge bg-success">Yes</span><% } else { %><span class="badge bg-secondary">No</span><% } %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+    <% if (!vocab.data || vocab.data.length === 0) { %>
+      <p class="text-muted">No vocabulary items.</p>
+    <% } %>
+  </div>
+</div>
+
+<% } else { %>
+<div class="alert alert-warning">No vocabulary data available.</div>
+<% } %>
+
+<%- include('partials/footer') %>

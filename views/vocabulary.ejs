@@ -1,0 +1,113 @@
+<%- include('partials/header', {title: 'Global Vocabulary', active: 'vocabulary'}) %>
+
+<h2 class="mb-3">Global Vocabulary</h2>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form id="filterForm" class="row g-3">
+      <div class="col-md-2">
+        <label class="form-label">Item Type</label>
+        <select name="itemType" class="form-select">
+          <option value="">All</option>
+          <option value="core_term">core_term</option>
+          <option value="technical_phrase">technical_phrase</option>
+          <option value="classroom_instruction">classroom_instruction</option>
+          <option value="assignment_phrase">assignment_phrase</option>
+          <option value="speaking_sentence">speaking_sentence</option>
+          <option value="discourse_marker">discourse_marker</option>
+          <option value="filler">filler</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Keyword</label>
+        <input type="text" name="keyword" class="form-control" placeholder="Search...">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Learning Target</label>
+        <select name="isLearningTarget" class="form-select">
+          <option value="">All</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Min Global Freq</label>
+        <input type="number" name="minGlobalFrequency" class="form-control" min="0">
+      </div>
+      <div class="col-md-2">
+        <input type="hidden" name="page" value="1">
+        <label class="form-label">&nbsp;</label>
+        <button type="submit" class="btn btn-primary w-100">Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <p class="text-muted"><%= total %> items (page <%= page %> of <%= totalPages %>)</p>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Item Text</th>
+          <th>Type</th>
+          <th>Meaning</th>
+          <th>Global Freq</th>
+          <th>Lessons</th>
+          <th>Courses</th>
+          <th>Familiarity</th>
+          <th>Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (locals.data && data.length) { %>
+          <% data.forEach(function(item) { %>
+          <tr>
+            <td><strong><%= item.itemText %></strong></td>
+            <td><span class="badge bg-secondary"><%= item.itemType || '—' %></span></td>
+            <td><%= item.meaningCn || '—' %></td>
+            <td><%= item.globalFrequency %></td>
+            <td><%= item.lessonCount %></td>
+            <td><%= item.courseCount %></td>
+            <td><%= item.familiarityLevel %></td>
+            <td><span class="badge bg-<%= item.priority === 'high' ? 'danger' : item.priority === 'low' ? 'success' : 'warning' %>"><%= item.priority %></span></td>
+          </tr>
+          <% }); %>
+        <% } else { %>
+          <tr><td colspan="8" class="text-muted text-center">No vocabulary items found.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<% if (totalPages > 1) { %>
+<nav class="mt-3">
+  <ul class="pagination">
+    <% for (var p = 1; p <= totalPages; p++) { %>
+      <li class="page-item <%= p === page ? 'active' : '' %>">
+        <a class="page-link" href="#" data-page="<%= p %>"><%= p %></a>
+      </li>
+    <% } %>
+  </ul>
+</nav>
+<% } %>
+
+<script>
+document.querySelectorAll('.pagination .page-link').forEach(function(link) {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    document.querySelector('input[name="page"]').value = this.dataset.page;
+    document.getElementById('filterForm').dispatchEvent(new Event('submit'));
+  });
+});
+(function() {
+  const sp = new URLSearchParams(window.location.search);
+  for (const [k, v] of sp.entries()) {
+    const el = document.querySelector('[name="' + k + '"]');
+    if (el) el.value = v;
+  }
+})();
+</script>
+
+<%- include('partials/footer') %>

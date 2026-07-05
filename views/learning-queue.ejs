@@ -1,0 +1,103 @@
+<%- include('partials/header', {title: 'Learning Queue', active: 'queue'}) %>
+
+<h2 class="mb-3">Learning Queue</h2>
+
+<div id="alertBox"></div>
+
+<div class="mb-3">
+  <button class="btn btn-primary" onclick="generateQueue()">Generate Queue</button>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Item Text</th>
+          <th>Type</th>
+          <th>Priority Score</th>
+          <th>Status</th>
+          <th>Reviews</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (locals.queue && queue.length) { %>
+          <% queue.forEach(function(q) { %>
+          <tr>
+            <td><strong><%= q.vocabularyItemId ? q.vocabularyItemId.itemText : q.itemText || '—' %></strong></td>
+            <td><span class="badge bg-secondary"><%= q.vocabularyItemId ? q.vocabularyItemId.itemType : q.itemType || '—' %></span></td>
+            <td><%= q.priorityScore %></td>
+            <td>
+              <select class="form-select form-select-sm statusSelect" data-id="<%= q._id %>" style="width:auto;display:inline-block">
+                <option value="new" <%= q.learningStatus === 'new' ? 'selected' : '' %>>new</option>
+                <option value="learning" <%= q.learningStatus === 'learning' ? 'selected' : '' %>>learning</option>
+                <option value="reviewing" <%= q.learningStatus === 'reviewing' ? 'selected' : '' %>>reviewing</option>
+                <option value="mastered" <%= q.learningStatus === 'mastered' ? 'selected' : '' %>>mastered</option>
+                <option value="ignored" <%= q.learningStatus === 'ignored' ? 'selected' : '' %>>ignored</option>
+              </select>
+              <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </td>
+            <td><%= q.reviewCount %></td>
+          </tr>
+          <% }); %>
+        <% } else { %>
+          <tr><td colspan="6" class="text-muted">No queue items. Click "Generate Queue" to populate.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function showAlert(msg, type) {
+  document.getElementById('alertBox').innerHTML =
+    '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+    msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+}
+
+async function generateQueue() {
+  try {
+    const res = await fetch('/api/learning-queue/generate', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      showAlert(data.message || 'Queue generated.', 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      showAlert(data.message || 'Error', 'danger');
+    }
+  } catch (err) {
+    showAlert('Network error: ' + err.message, 'danger');
+  }
+}
+
+document.querySelectorAll('.statusSelect').forEach(function(select) {
+  select.addEventListener('change', async function() {
+    const id = this.dataset.id;
+    const status = this.value;
+    const spinner = this.nextElementSibling;
+    this.disabled = true;
+    spinner.classList.remove('d-none');
+    try {
+      const res = await fetch('/api/learning-queue/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learningStatus: status })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showAlert(data.message || 'Update failed', 'danger');
+        this.value = this.dataset.prevValue || this.value;
+      }
+    } catch (err) {
+      showAlert('Network error: ' + err.message, 'danger');
+    } finally {
+      this.disabled = false;
+      spinner.classList.add('d-none');
+    }
+  });
+  select.dataset.prevValue = select.value;
+});
+</script>
+
+<%- include('partials/footer') %>

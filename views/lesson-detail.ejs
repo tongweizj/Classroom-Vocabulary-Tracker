@@ -1,0 +1,148 @@
+<%- include('partials/header', {title: 'Lesson Detail', active: 'lessons'}) %>
+
+<div class="mb-3">
+  <a href="/admin/lessons" class="btn btn-sm btn-outline-secondary">← Back to Lessons</a>
+</div>
+
+<div id="alertBox"></div>
+
+<% if (locals.lesson) { %>
+<div class="card mb-3">
+  <div class="card-body">
+    <h5 class="card-title"><%= lesson.topic || 'Untitled Lesson' %></h5>
+    <p class="mb-1"><strong>Date:</strong> <%= lesson.sessionDate %></p>
+    <p class="mb-1"><strong>Status:</strong> <span class="badge bg-secondary"><%= lesson.status %></span></p>
+    <% if (lesson.courseId) { %>
+      <p class="mb-0"><strong>Course:</strong> <%= lesson.courseId.courseCode %> - <%= lesson.courseId.courseName %></p>
+    <% } %>
+  </div>
+</div>
+
+<div class="row mb-3">
+  <div class="col-md-4">
+    <button class="btn btn-warning" onclick="correctTranscript()">Correct Transcript</button>
+  </div>
+  <div class="col-md-4">
+    <form id="uploadForm" enctype="multipart/form-data">
+      <div class="input-group">
+        <input type="file" name="file" class="form-control" accept=".txt" required>
+        <button type="submit" class="btn btn-success">Upload Transcript</button>
+      </div>
+    </form>
+  </div>
+  <div class="col-md-4">
+    <a href="/admin/lessons/<%= lesson._id %>/vocabulary" class="btn btn-info">View Vocabulary</a>
+  </div>
+</div>
+
+<% if (locals.transcript) { %>
+<div class="card mb-3">
+  <div class="card-header">Raw Text</div>
+  <div class="card-body">
+    <pre class="mb-0" style="white-space: pre-wrap;"><%= transcript.rawText || '(none)' %></pre>
+  </div>
+</div>
+<div class="card mb-3">
+  <div class="card-header">Corrected Text</div>
+  <div class="card-body">
+    <pre class="mb-0" style="white-space: pre-wrap;"><%= transcript.correctedText || '(none)' %></pre>
+  </div>
+</div>
+<div class="card mb-3">
+  <div class="card-header">Cleaned Text</div>
+  <div class="card-body">
+    <pre class="mb-0" style="white-space: pre-wrap;"><%= transcript.cleanedText || '(none)' %></pre>
+  </div>
+</div>
+<% } else { %>
+<div class="card mb-3"><div class="card-body text-muted">No transcript available.</div></div>
+<% } %>
+
+<div class="card mb-3">
+  <div class="card-header">Import Vocabulary JSON</div>
+  <div class="card-body">
+    <form id="vocabImportForm">
+      <div class="mb-3">
+        <textarea name="itemsJson" class="form-control" rows="6" placeholder='Paste JSON: either [{"itemText":"...", ...}] or {"items": [{"itemText":"...", ...}]}' required></textarea>
+        <div class="form-text">Accept either a JSON array or an object with items key.</div>
+      </div>
+      <button type="submit" class="btn btn-primary">Import</button>
+    </form>
+  </div>
+</div>
+
+<% } else { %>
+<div class="alert alert-warning">Lesson not found.</div>
+<% } %>
+
+<script>
+function showAlert(msg, type) {
+  document.getElementById('alertBox').innerHTML =
+    '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+    msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+}
+
+async function correctTranscript() {
+  try {
+    const res = await fetch('/api/lessons/<%= lesson._id %>/correct', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      showAlert(data.message || 'Correction applied.', 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      showAlert(data.message || 'Error', 'danger');
+    }
+  } catch (err) {
+    showAlert('Network error: ' + err.message, 'danger');
+  }
+}
+
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  try {
+    const res = await fetch('/api/lessons/<%= lesson._id %>/transcript/upload', {
+      method: 'POST',
+      body: fd
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showAlert(data.message || 'Uploaded.', 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      showAlert(data.message || 'Error', 'danger');
+    }
+  } catch (err) {
+    showAlert('Network error: ' + err.message, 'danger');
+  }
+});
+
+document.getElementById('vocabImportForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const raw = e.target.itemsJson.value;
+  let parsed;
+  try { parsed = JSON.parse(raw); } catch (err) {
+    showAlert('Invalid JSON: ' + err.message, 'danger');
+    return;
+  }
+  const items = Array.isArray(parsed) ? parsed : (parsed.items || []);
+  try {
+    const res = await fetch('/api/lessons/<%= lesson._id %>/vocabulary/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showAlert(data.message || 'Imported.', 'success');
+      e.target.reset();
+    } else {
+      showAlert(data.message || 'Error', 'danger');
+    }
+  } catch (err) {
+    showAlert('Network error: ' + err.message, 'danger');
+  }
+});
+</script>
+
+<%- include('partials/footer') %>
