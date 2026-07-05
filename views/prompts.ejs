@@ -1,0 +1,128 @@
+<%- include('partials/header', {title: 'Prompts', active: 'prompts'}) %>
+
+<h2 class="mb-3">Prompt Management</h2>
+
+<div id="alertBox"></div>
+
+<div class="card mb-4">
+  <div class="card-header">Add New Prompt</div>
+  <div class="card-body">
+    <form id="promptForm" class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Name</label>
+        <input type="text" name="name" class="form-control" required placeholder="Prompt name">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-select">
+          <option value="correction">correction</option>
+          <option value="cleaning">cleaning</option>
+          <option value="vocabulary">vocabulary</option>
+          <option value="general">general</option>
+        </select>
+      </div>
+      <div class="col-md-7">
+        <label class="form-label">Content</label>
+        <input type="text" name="content" class="form-control" required placeholder="Prompt content">
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary">Create Prompt</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">All Prompts</div>
+  <div class="card-body">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Content</th>
+          <th>Active</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="promptTableBody">
+        <tr><td colspan="5" class="text-muted">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function showAlert(msg, type) {
+  document.getElementById('alertBox').innerHTML =
+    '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+    msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+}
+
+async function loadPrompts() {
+  try {
+    const res = await fetch('/api/prompts');
+    const data = await res.json();
+    const tbody = document.getElementById('promptTableBody');
+    if (data.data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No prompts.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = '';
+    data.data.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td><strong>' + p.name + '</strong></td>' +
+        '<td><span class="badge bg-secondary">' + p.category + '</span></td>' +
+        '<td><small>' + (p.content.length > 80 ? p.content.substring(0, 80) + '...' : p.content) + '</small></td>' +
+        '<td><span class="badge bg-' + (p.isActive ? 'success' : 'secondary') + '">' + (p.isActive ? 'Active' : 'Inactive') + '</span></td>' +
+        '<td><button class="btn btn-sm btn-outline-danger" onclick="deletePrompt(\'' + p._id + '\')">Delete</button></td>';
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    document.getElementById('promptTableBody').innerHTML = '<tr><td colspan="5" class="text-danger">Failed to load</td></tr>';
+  }
+}
+
+document.getElementById('promptForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  try {
+    const res = await fetch('/api/prompts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showAlert(data.message, 'success');
+      e.target.reset();
+      loadPrompts();
+    } else {
+      showAlert(data.message || 'Error', 'danger');
+    }
+  } catch (err) {
+    showAlert('Network error: ' + err.message, 'danger');
+  }
+});
+
+async function deletePrompt(id) {
+  if (!confirm('Delete this prompt?')) return;
+  try {
+    const res = await fetch('/api/prompts/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (res.ok) {
+      showAlert(data.message, 'success');
+      loadPrompts();
+    } else {
+      showAlert(data.message || 'Error', 'danger');
+    }
+  } catch (err) {
+    showAlert('Network error: ' + err.message, 'danger');
+  }
+}
+
+loadPrompts();
+</script>
+
+<%- include('partials/footer') %>

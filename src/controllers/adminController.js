@@ -4,6 +4,7 @@ const Transcript = require("../models/Transcript");
 const VocabularyItem = require("../models/VocabularyItem");
 const LessonVocabularyStat = require("../models/LessonVocabularyStat");
 const LearningQueue = require("../models/LearningQueue");
+const Prompt = require("../models/Prompt");
 
 require("../models/VocabularyItem");
 
@@ -151,6 +152,14 @@ exports.learningQueuePage = async (req, res) => {
       active: "queue",
       queue: queue.filter((q) => q.vocabularyItemId),
     });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+};
+
+exports.promptsPage = async (req, res) => {
+  try {
+    res.render("prompts", { title: "Prompts", active: "prompts" });
   } catch (err) {
     res.status(500).send(err.message);
   }

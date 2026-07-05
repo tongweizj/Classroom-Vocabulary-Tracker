@@ -9,5 +9,6 @@ router.get("/lessons/:id", controller.lessonDetailPage);
 router.get("/lessons/:id/vocabulary", controller.lessonVocabPage);
 router.get("/vocabulary", controller.vocabularyPage);
 router.get("/learning-queue", controller.learningQueuePage);
+router.get("/prompts", controller.promptsPage);
 
 module.exports = router;

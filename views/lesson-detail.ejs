@@ -19,10 +19,7 @@
 </div>
 
 <div class="row mb-3">
-  <div class="col-md-4">
-    <button class="btn btn-warning" onclick="correctTranscript()">Correct Transcript</button>
-  </div>
-  <div class="col-md-4">
+  <div class="col-md-6">
     <form id="uploadForm" enctype="multipart/form-data">
       <div class="input-group">
         <input type="file" name="file" class="form-control" accept=".txt" required>
@@ -30,28 +27,87 @@
       </div>
     </form>
   </div>
-  <div class="col-md-4">
+  <div class="col-md-6">
     <a href="/admin/lessons/<%= lesson._id %>/vocabulary" class="btn btn-info">View Vocabulary</a>
   </div>
 </div>
 
 <% if (locals.transcript) { %>
 <div class="card mb-3">
-  <div class="card-header">Raw Text</div>
-  <div class="card-body">
-    <pre class="mb-0" style="white-space: pre-wrap;"><%= transcript.rawText || '(none)' %></pre>
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span role="button" data-bs-toggle="collapse" data-bs-target="#rawTextBody" aria-expanded="false">
+      Raw Text <span class="text-muted">(click to expand)</span>
+    </span>
+    <button class="btn btn-sm btn-warning" onclick="correctTranscript()">Correct Transcript</button>
+  </div>
+  <div class="collapse" id="rawTextBody">
+    <div class="card-body">
+      <pre class="mb-0" style="white-space: pre-wrap;"><%= transcript.rawText || '(none)' %></pre>
+    </div>
   </div>
 </div>
 <div class="card mb-3">
-  <div class="card-header">Corrected Text</div>
-  <div class="card-body">
-    <pre class="mb-0" style="white-space: pre-wrap;"><%= transcript.correctedText || '(none)' %></pre>
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span role="button" data-bs-toggle="collapse" data-bs-target="#correctedTextBody" aria-expanded="false">
+      Corrected Text <span class="text-muted">(click to expand)</span>
+    </span>
+    <div class="d-flex gap-2">
+      <% if (transcript.correctedText) { %>
+      <button class="btn btn-sm btn-outline-secondary" onclick="downloadText('corrected')">Download .txt</button>
+      <% } %>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          Copy Prompt
+        </button>
+        <ul class="dropdown-menu prompt-dropdown" id="promptDropdown">
+          <li><span class="dropdown-item-text text-muted">Loading...</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="collapse" id="correctedTextBody">
+    <div class="card-body">
+      <pre class="mb-0" style="white-space: pre-wrap;"><%= transcript.correctedText || '(none)' %></pre>
+    </div>
   </div>
 </div>
 <div class="card mb-3">
-  <div class="card-header">Cleaned Text</div>
-  <div class="card-body">
-    <pre class="mb-0" style="white-space: pre-wrap;"><%= transcript.cleanedText || '(none)' %></pre>
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span role="button" data-bs-toggle="collapse" data-bs-target="#cleanedTextBody" aria-expanded="false">
+      Cleaned Text <span class="text-muted">(click to expand)</span>
+    </span>
+    <div class="d-flex gap-2">
+      <% if (transcript.cleanedText) { %>
+      <button class="btn btn-sm btn-outline-secondary" onclick="downloadText('cleaned')">Download .txt</button>
+      <% } %>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          Copy Prompt
+        </button>
+        <ul class="dropdown-menu prompt-dropdown">
+          <li><span class="dropdown-item-text text-muted">Loading...</span></li>
+        </ul>
+      </div>
+      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#cleanedTextForm" aria-expanded="false">Edit</button>
+    </div>
+  </div>
+  <div class="collapse" id="cleanedTextBody">
+    <div class="card-body">
+      <pre class="mb-0" style="white-space: pre-wrap;"><%= transcript.cleanedText || '(none)' %></pre>
+    </div>
+  </div>
+  <div class="collapse" id="cleanedTextForm">
+    <div class="card-body border-top">
+      <form id="cleanedTextSubmitForm">
+        <div class="mb-3">
+          <textarea name="cleanedText" class="form-control" rows="8" placeholder="Paste cleaned text here..."><%= transcript.cleanedText || '' %></textarea>
+        </div>
+        <div class="mb-3">
+          <input type="text" name="correctionNotes" class="form-control" placeholder="Correction notes (optional)" value="<%= transcript.correctionNotes || '' %>">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Save Cleaned Text</button>
+      </form>
+    </div>
   </div>
 </div>
 <% } else { %>
@@ -59,7 +115,17 @@
 <% } %>
 
 <div class="card mb-3">
-  <div class="card-header">Import Vocabulary JSON</div>
+  <div class="card-header d-flex justify-content-between align-items-center">
+    Import Vocabulary JSON
+    <div class="dropdown">
+      <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        Copy Prompt
+      </button>
+      <ul class="dropdown-menu prompt-dropdown">
+        <li><span class="dropdown-item-text text-muted">Loading...</span></li>
+      </ul>
+    </div>
+  </div>
   <div class="card-body">
     <form id="vocabImportForm">
       <div class="mb-3">
@@ -80,6 +146,27 @@ function showAlert(msg, type) {
   document.getElementById('alertBox').innerHTML =
     '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
     msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+}
+
+function downloadText(type) {
+  let text, filename;
+  <% if (locals.transcript) { %>
+  const prefix = '<%= lesson.courseId ? lesson.courseId.courseCode : "unknown" %>_<%= lesson.sessionDate %>';
+  if (type === 'corrected') {
+    text = <%- JSON.stringify(transcript.correctedText || '') %>;
+    filename = prefix + '_corrected.txt';
+  } else if (type === 'cleaned') {
+    text = <%- JSON.stringify(transcript.cleanedText || '') %>;
+    filename = prefix + '_cleaned.txt';
+  }
+  <% } %>
+  if (!text) return;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 async function correctTranscript() {
@@ -143,6 +230,59 @@ document.getElementById('vocabImportForm').addEventListener('submit', async func
     showAlert('Network error: ' + err.message, 'danger');
   }
 });
+
+document.getElementById('cleanedTextSubmitForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  try {
+    const res = await fetch('/api/lessons/<%= lesson._id %>/transcript', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showAlert(data.message || 'Cleaned text saved.', 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      showAlert(data.message || 'Error', 'danger');
+    }
+  } catch (err) {
+    showAlert('Network error: ' + err.message, 'danger');
+  }
+});
+
+async function loadPrompts() {
+  try {
+    const res = await fetch('/api/prompts');
+    const data = await res.json();
+    document.querySelectorAll('.prompt-dropdown').forEach(ul => {
+      ul.innerHTML = '';
+      data.data.forEach(p => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.className = 'dropdown-item';
+        a.href = '#';
+        a.innerHTML = '<strong>' + p.name + '</strong><br><small class="text-muted">' + p.category + '</small>';
+        a.onclick = function(e) {
+          e.preventDefault();
+          navigator.clipboard.writeText(p.content).then(() => {
+            showAlert('Prompt "' + p.name + '" copied to clipboard.', 'success');
+          });
+        };
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+    });
+  } catch (err) {
+    document.querySelectorAll('.prompt-dropdown').forEach(ul => {
+      ul.innerHTML = '<li><span class="dropdown-item-text text-danger">Failed to load</span></li>';
+    });
+  }
+}
+
+loadPrompts();
 </script>
 
 <%- include('partials/footer') %>
